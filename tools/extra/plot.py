@@ -1,6 +1,16 @@
 # In the name of GOD the most compassionate the most merciful
 # Originally developed by Yasse Souri
-# Just added the search for current directory so that users dont have to use command prompts!
+# Just added the search for current directory so that users dont have to use command prompts anymore!
+# Coded By: Seyyed Hossein Hasan Pour (Coderx7@gmail.com)
+# -------How to Use ---------------
+# 1.Just place your caffe's traning/test log file (with .log extension) next to this script
+# and then run the script.If you have multiple logs placed next to the script, it will plot all of them
+# you may also copy this script to your working directory, where you generate/keep your train/test logs
+# and easily execute the script and see the curve plotted. 
+# this script is standalone.
+# 2. you can use command line arguments as well, just feed the script with different log files separated by space
+# and you are good to go.
+#----------------------------------
 import numpy as np
 import re
 import click
