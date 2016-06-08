@@ -1,6 +1,7 @@
 # In the name of GOD the most compassionate the most merciful
 # Originally developed by Yasse Souri
 # Just added the search for current directory so that users dont have to use command prompts anymore!
+# and also shows the top 4 accuracies achieved so far, and displaying the highest in the plot title 
 # Coded By: Seyyed Hossein Hasan Pour (Coderx7@gmail.com)
 # -------How to Use ---------------
 # 1.Just place your caffe's traning/test log file (with .log extension) next to this script
@@ -16,8 +17,8 @@ import re
 import click
 import glob, os
 from matplotlib import pylab as plt
-
-
+import operator
+import ntpath
 @click.command()
 @click.argument('files', nargs=-1, type=click.Path(exists=True))
 def main(files):
@@ -34,19 +35,20 @@ def main(files):
         files = glob.glob("*.log")
 
     for i, log_file in enumerate(files):
-        loss_iterations, losses, accuracy_iterations, accuracies, accuracies_iteration_checkpoints_ind = parse_log(log_file)
-        disp_results(fig, ax1, ax2, loss_iterations, losses, accuracy_iterations, accuracies, accuracies_iteration_checkpoints_ind, color_ind=i)
+        loss_iterations, losses, accuracy_iterations, accuracies, accuracies_iteration_checkpoints_ind, fileName = parse_log(log_file)
+        disp_results(fig, ax1, ax2, loss_iterations, losses, accuracy_iterations, accuracies, accuracies_iteration_checkpoints_ind, fileName, color_ind=i)
     plt.show()
 
 
 def parse_log(log_file):
-    with open(log_file, 'r') as log_file:
-        log = log_file.read()
+    with open(log_file, 'r') as log_file2:
+        log = log_file2.read()
 
     loss_pattern = r"Iteration (?P<iter_num>\d+), loss = (?P<loss_val>[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?)"
     losses = []
     loss_iterations = []
 
+    fileName= os.path.basename(log_file)
     for r in re.findall(loss_pattern, log):
         loss_iterations.append(int(r[0]))
         losses.append(float(r[1]))
@@ -71,15 +73,44 @@ def parse_log(log_file):
 
     accuracy_iterations = np.array(accuracy_iterations)
     accuracies = np.array(accuracies)
+	
+    return loss_iterations, losses, accuracy_iterations, accuracies, accuracies_iteration_checkpoints_ind, fileName
 
-    return loss_iterations, losses, accuracy_iterations, accuracies, accuracies_iteration_checkpoints_ind
 
-
-def disp_results(fig, ax1, ax2, loss_iterations, losses, accuracy_iterations, accuracies, accuracies_iteration_checkpoints_ind, color_ind=0):
+def disp_results(fig, ax1, ax2, loss_iterations, losses, accuracy_iterations, accuracies, accuracies_iteration_checkpoints_ind, fileName, color_ind=0):
     modula = len(plt.rcParams['axes.color_cycle'])
+    acrIterations =[]
+    top_acrs={}
+    if accuracies.size:
+        if 	accuracies.size>4:
+		    top_n = 4
+        else:
+            top_n = accuracies.size -1		
+        temp = np.argpartition(-accuracies, top_n)
+        result_indexces = temp[:top_n]
+        temp = np.partition(-accuracies, top_n)
+        result = -temp[:top_n]
+        for acr in result_indexces:
+            acrIterations.append(accuracy_iterations[acr])
+            top_acrs[str(accuracy_iterations[acr])]=str(accuracies[acr])
+
+        sorted_top4 = sorted(top_acrs.items(), key=operator.itemgetter(1))
+        maxAcc = np.amax(accuracies, axis=0)
+        iterIndx = np.argmax(accuracies)
+        maxAccIter = accuracy_iterations[iterIndx]
+        maxIter =   accuracy_iterations[-1]
+        consoleInfo = format('\n[%s]:maximum accuracy [from 0 to %s ] = [Iteration %s]: %s ' %(fileName,maxIter,maxAccIter ,maxAcc))
+        plotTitle = format('max accuracy(%s) [Iteration %s]: %s ' % (fileName,maxAccIter, maxAcc))
+        print (consoleInfo)
+        #print (str(result))
+        #print(acrIterations)
+       # print 'Top 4 accuracies:'		
+        print ('Top 4 accuracies:'+str(sorted_top4))		
+        plt.title(plotTitle)
     ax1.plot(loss_iterations, losses, color=plt.rcParams['axes.color_cycle'][(color_ind * 2 + 0) % modula])
-    ax2.plot(accuracy_iterations, accuracies, plt.rcParams['axes.color_cycle'][(color_ind * 2 + 1) % modula])
+    ax2.plot(accuracy_iterations, accuracies, plt.rcParams['axes.color_cycle'][(color_ind * 2 + 1) % modula], label=str(fileName))
     ax2.plot(accuracy_iterations[accuracies_iteration_checkpoints_ind], accuracies[accuracies_iteration_checkpoints_ind], 'o', color=plt.rcParams['axes.color_cycle'][(color_ind * 2 + 1) % modula])
+    plt.legend(loc='lower right') 
 
 
 if __name__ == '__main__':
