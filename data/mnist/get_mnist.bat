@@ -1,4 +1,5 @@
 ECHO OFF
+ECHO Make sure the path does not have any spaces in it!
 REM This scripts downloads the mnist data and unzips it.
 SET currentDirectory=%~dp0
 SET ROOT=%currentDirectory:~0,-12%
